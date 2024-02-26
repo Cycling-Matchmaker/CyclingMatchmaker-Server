@@ -50,6 +50,27 @@ module.exports = {
                 handleGeneralError(error, "Users not found.");
             }
         },
+
+        async requestStravaAuthorization() {
+            //check auth for user
+            if (!contextValue) {
+                throw new GraphQLError('You must be logged in to perform this action.', {
+                    extensions: {
+                        code: 'UNAUTHENTICATED',
+                    },
+                })
+            }
+            //construct oauth url
+            const queryParams = new URLSearchParams({
+                client_id: process.env.STRAVA_CLIENT_ID,
+                redirect_uri: process.env.CLIENT_URI,
+                scope: 'activity:read_all,profile:read_all',
+                response_type: 'code',
+                approval_prompt: 'auto'
+            })
+
+            return `https://www.strava.com/oauth/authorize?${queryParams}`
+        }
     },
 
     Mutation: {
@@ -203,6 +224,63 @@ module.exports = {
                 { returnDocument: 'after'},
             );
             return res.equipment;
-        }
+        },
+
+        async exchangeStravaAuthorizationCode(_, {
+            code,
+            scope
+        }) {
+            //check user auth
+            if(!contextValue.username) {
+                throw new GraphQLError('You must be logged in to perform this action.', {
+                    extensions: {
+                        code: 'UNAUTHENTICATED',
+                    },
+                })
+            }
+            //check that scope is what we need
+            const scope = scope.split(',');
+            if (!scope.includes('activity:read_all') || scope.includes('profile:read_all')) {
+                throw new GraphQLError('Scope does not include correct permissions.', {
+                    extensions: {
+                        code: 'BAD_USER_INPUT'
+                    }
+                });
+            }
+            //exchange tokens with Strava
+            const queryParams = new URLSearchParams({
+                client_id: process.env.STRAVA_CLIENT_ID,
+                client_secret: process.env.STRAVA_CLIENT_SECRET,
+                code: code,
+                grant_type: 'authorization_code'
+            });
+            
+            try {
+                const response = await fetch(`https://www.strava.com/oauth/token?${queryParams}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ key: 'value' }),
+                });
+
+                const responseData = await response.json();
+                const stravaToken = responseData.access_token;
+                const refresh_token = responseData.refresh_token;
+                const tokenExpireData = new Date(responseData.expires_at).toISOString();
+                //store user's access
+                const user = await User.findOneAndUpdate(
+                    {contextValue.username}
+                )
+            } catch(err) {
+                throw new GraphQLError(err, {
+                    extensions: {
+                        code: 'Internal Server Error'
+                    }
+                })
+            }
+            return null;
+        },
     }
 };
