@@ -8,7 +8,9 @@ const {
 
 const {
     validateRegisterInput,
-    validateLoginInput
+    validateLoginInput,
+    validateUsername,
+    validateEmail,
 } = require('../../util/validators');
   
 
@@ -109,6 +111,7 @@ module.exports = {
             }
         },
 
+<<<<<<< HEAD
         async requestStravaAuthorization() {
             //check auth for user
             if (!contextValue) {
@@ -129,6 +132,29 @@ module.exports = {
 
             return `https://www.strava.com/oauth/authorize?${queryParams}`
         }
+=======
+        async validUsername(_, { username }) {
+            const user = await User.findOne({ username: username.toLowerCase() });
+            if (user) return false;
+
+            const { valid, errors } = validateUsername(username);
+            if (!valid) {
+                handleInputError(errors);
+            }
+            return true;
+        },
+
+        async validEmail(_, { email }) {
+            const user = await User.findOne({ email: email.toLowerCase() });
+            if (user) return false;
+
+            const { valid, errors } = validateEmail(email);
+            if (!valid) {
+                handleInputError(errors);
+            }
+            return true;
+        },
+>>>>>>> b8cad074aacfcf7239ca32a436ca8fbce56cf76e
     },
 
     Mutation: {

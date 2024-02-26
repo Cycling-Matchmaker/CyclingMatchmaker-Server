@@ -129,6 +129,8 @@ module.exports = gql`
         getUser(username: String!): User!
         getUsers: [User]!
         requestStravaAuthorization(): String!
+        validUsername(username: String!): Boolean!
+        validEmail(email: String!): Boolean!
         # Events
         getEvent(eventID: String!): Event!
         getEvents: [Event]!

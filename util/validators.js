@@ -108,3 +108,42 @@ module.exports.validateRegisterInput = (
       valid: Object.keys(errors).length < 1
     };
   };
+
+  module.exports.validateUsername = (username) => {
+    const errors = {};
+
+    const usernameValidator = /^(?=.{6,20}$)(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$/i;
+
+    if (username.trim() === "") {
+      errors.username = "Username is required.";
+    } else {
+        if (!username.match(usernameValidator)) {
+            errors.username =
+            "Username must be at least 6 characters, max 20. No special characters, except for periods (.) and underscores (_).";
+        }
+    }
+
+    return {
+      errors,
+      valid: Object.keys(errors).length < 1,
+    };
+  };
+
+  module.exports.validateEmail = (email) => {
+    const errors = {};
+
+    const emailRegex = /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,12})$/;
+
+    if (email.trim() === "") {
+      errors.email = "Email is required.";
+    } else {
+        if (!email.match(emailRegex)) {
+            errors.email = "Invalid email address.";
+        }
+    }
+
+    return {
+      errors,
+      valid: Object.keys(errors).length < 1,
+    };
+  };
