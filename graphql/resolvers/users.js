@@ -31,6 +31,64 @@ function generateToken(user, time) {
     );
   }
 
+/*
+This function checks if a user's strava token has expired.
+If the token has expired, a new token will be requested from strava
+and the respective fields in the user document will be updated.
+Returns the strava expiration date.
+*/
+async function checkStravaToken(username) {
+    //check for token expiry
+    try {
+        const user = await User.findOne({ username }).select('stravaRefreshToken', 'stravaTokenExpiration');
+        if (user.stravaTokenExpiration < new Date()) {
+            //token has expired, request new one
+            return refreshStravaToken(user.stravaRefreshToken);
+        }
+    } catch (error) {
+        handleGeneralError(error, "User not found.");
+    }
+}
+async function refreshStravaToken(refreshToken) {
+    try {
+        const queryParams = new URLSearchParams({
+            client_id: process.env.STRAVA_CLIENT_ID,
+            client_secret: process.env.STRAVA_CLIENT_SECRET,
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken
+        });
+        
+        const response = await fetch(`https://www.strava.com/oauth/token?${queryParams}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ key: 'value' }),
+        });
+
+        const responseData = await response.json();
+        const APIToken = responseData.access_token;
+        const refreshToken = responseData.refresh_token;
+        const tokenExpiration = new Date(responseData.expires_at).toISOString();
+        const user = await User.findOneAndUpdate(
+            {username: contextValue.username},
+            {
+                stravaAPIToken: APIToken,
+                stravaRefreshToken: refreshToken,
+                stravaTokenExpiration: tokenExpiration 
+            }
+        );
+        return tokenExpiration;
+    } catch (error) {
+        throw new GraphQLError(err, {
+            extensions: {
+                code: 'Internal Server Error'
+            }
+        })
+    }
+    return null;
+}
 module.exports = {
     Query: {
         async getUser(_, { username }) {
