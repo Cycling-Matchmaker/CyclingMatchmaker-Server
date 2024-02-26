@@ -266,12 +266,17 @@ module.exports = {
                 });
 
                 const responseData = await response.json();
-                const stravaToken = responseData.access_token;
-                const refresh_token = responseData.refresh_token;
-                const tokenExpireData = new Date(responseData.expires_at).toISOString();
+                const APIToken = responseData.access_token;
+                const refreshToken = responseData.refresh_token;
+                const tokenExpiration = new Date(responseData.expires_at).toISOString();
                 //store user's access
                 const user = await User.findOneAndUpdate(
-                    {contextValue.username}
+                    {username: contextValue.username},
+                    {
+                        stravaAPIToken: APIToken,
+                        stravaRefreshToken: refreshToken,
+                        stravaTokenExpiration: tokenExpiration 
+                    }
                 )
             } catch(err) {
                 throw new GraphQLError(err, {

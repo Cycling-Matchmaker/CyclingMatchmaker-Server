@@ -86,6 +86,10 @@ const userSchema = new Schema({
         type: String,
         default: '',
     },
+    stravaTokenExpiration: {
+        type: String,
+        default: ''
+    },
     createdAt: {
         type: String,
         required: true,
