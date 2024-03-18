@@ -17,6 +17,7 @@
     "graphql-tag": "^2.12.6",
     "graphql-tools": "^9.0.0",
     "jsonwebtoken": "^9.0.2",
+    "luxon": "^3.4.4",
     "mongoose": "^8.1.2"
   },
   "devDependencies": {

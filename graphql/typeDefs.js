@@ -1,6 +1,8 @@
 const gql = require('graphql-tag');
 
 module.exports = gql`
+    
+    scalar Date
 
     ##  MAIN MODELS
 
