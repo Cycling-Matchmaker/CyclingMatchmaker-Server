@@ -15,7 +15,7 @@ module.exports = gql`
         firstName: String!
         lastName: String!
         sex: String!
-        birthday: String!
+        birthday: Date!
         weight: Int!
         locationName: String
         locationCoords: [Float]
@@ -54,7 +54,7 @@ module.exports = gql`
         name: String!
         locationName: String!
         locationCoords: [Float]!
-        startTime: String!
+        startTime: Date!
         description: String
         bikeType: String!
         difficulty: String!
@@ -139,6 +139,17 @@ module.exports = gql`
         radius: Float
     }
 
+    input GetEventsInput {
+        page: Int
+        pageSize: Int
+        startDate: Date!
+        endDate: Date
+        bikeType: [String]
+        location: String
+        radius: Int!
+        match: [String]
+    }
+
     ## QUERY LIST
     type Query {
         # Users
@@ -150,7 +161,7 @@ module.exports = gql`
         # Events
         getEvent(eventID: String!): Event!
         getAllEvents: [Event]!
-        getEvents(username: String!): [Event]!
+        getEvents(getEventsInput: GetEventsInput!): [Event]!
     }
 
     ## MUTATION LIST

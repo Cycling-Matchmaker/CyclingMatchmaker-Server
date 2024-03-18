@@ -17,18 +17,82 @@ module.exports = {
             return events;
         },
 
-        async getEvents(_, { username }) {
-            const user = await User.findOne({ username });
-            const events = await Event.find({
-                "locationCoords": {
-                    $geoWithin: {
-                        $centerSphere: [
-                            user.locationCoords,
-                            user.radius / 6378.1]
+        async getEvents(_, {
+            getEventsInput: {
+                page,
+                pageSize,
+                startDate,
+                endDate,
+                bikeType,
+                location,
+                radius,
+                match,
+            },
+            contextValue
+        }) {
+            if (!contextValue.user.username) {
+                throw new GraphQLError('You must be logged in to perform this action.', {
+                    extensions: {
+                        code: 'UNAUTHENTICATED',
+                    },
+                })
+            }
+            //check if location and/or radius is null
+            let locationCoords = null;
+            if(!location | !radius) {
+                geoParam = await User.findOne({ username: contextValue.user.username }).select('locationCoords', 'radius');
+                if (!location)
+                    locationCoords = geoParam.locationCoords;
+                if (!radius)
+                    radius = geoParam.radius;
+            }
+            //if location string provided, find corresponding coords
+            else if (!locationCoords){
+                const fetchResult = await fetchLocation(location, null);
+                locationCoords = [fetchResult.lon, fetchResult.lat];
+            }
+            if (!locationCoords) {
+                throw new GraphQLError('Location not provided nor found in user document.', {
+                    extensions: {
+                        code: 'BAD_USER_INPUT'
                     }
-                }
-            });
-        return events;
+                });
+            }
+            if(!page)
+                page = 0;
+            if(!pageSize)
+                pageSize = 50;
+
+            const events = await Event.aggregate(
+                [   
+                    {
+                        $match: {
+                            locationCoords: {
+                                $geoWithin: {
+                                    $centerSphere: [
+                                        locationCoords,
+                                        radius / 6378.1]
+                                }
+                            },
+                            startTime: {
+                                $gte: startDate,
+                                $lte: endDate,
+                            },
+                            bikeType: {
+                                $in: bikeType
+                            },
+                        }
+                    },
+                    {
+                        $facet: {
+                            metadata: [{ $count: 'totalCount' }],
+                            data: [{ $skip: (page) * pageSize }, { $limit: pageSize }],
+                        }
+                    }
+                ]
+            );
+
+            return events;
         },
     },
 
