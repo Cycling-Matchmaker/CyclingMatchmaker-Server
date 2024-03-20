@@ -148,7 +148,7 @@ module.exports = {
             //construct oauth url
             const queryParams = new URLSearchParams({
                 client_id: process.env.STRAVA_CLIENT_ID,
-                redirect_uri: process.env.CLIENT_URI,
+                redirect_uri: process.env.CLIENT_URI + '/redirect',
                 scope: 'activity:read_all,profile:read_all',
                 response_type: 'code',
                 approval_prompt: 'auto'
